@@ -48,6 +48,8 @@ jobs:
       BACKEND_VERSION: ${{ inputs.backend_image_version }}
       AGFC_NAME: ${{ vars.AGFC_NAME }}
       AGFC_FRONTEND_NAME: ${{ vars.AGFC_FRONTEND_NAME }}
+      KEYVAULT_NAME: ${{ vars.KEYVAULT_NAME }}
+      KEYVAULT_IDENTITY_CLIENT_ID: ${{ vars.KEYVAULT_IDENTITY_CLIENT_ID }}
 
     steps:
       - name: Checkout
@@ -67,41 +69,25 @@ jobs:
             --name "${AKS_CLUSTER}" \
             --overwrite-existing
 
-      - name: Deploy images for app 
+      - name: Deploy cnapp to AKS with Azure Key Vault mounted secrets
+        shell: bash
+        env:
+
+          BACKEND_SECRET_NAME: backend-secret-name-in-keyvault
+          FRONTEND_SECRET_NAME: frontend-secret-name-in-keyvault
+
         run: |
-          kubectl create namespace cnapp --dry-run=client -o yaml | kubectl apply -f -
-
-          IMAGE="${ACR_NAME}.azurecr.io/${IMAGE_NAME_BACKEND}:${BACKEND_VERSION}"
-
-          kubectl create deployment backend \
-            --namespace cnapp \
-            --image "$IMAGE" \
-            --port 8000 \
-            --dry-run=client -o yaml | kubectl apply -f -
-               
-          kubectl expose deployment backend \
-            --namespace cnapp \
-            --name backend \
-            --port 8000 \
-            --target-port 8000 \
-            --type ClusterIP \
-            --dry-run=client -o yaml | kubectl apply -f -
-
-          IMAGE="${ACR_NAME}.azurecr.io/${IMAGE_NAME_FRONTEND}:${FRONTEND_VERSION}"
-
-          kubectl create deployment frontend \
-            --namespace cnapp \
-            --image "$IMAGE" \
-            --port 3000 \
-            --dry-run=client -o yaml | kubectl apply -f -
-            
-          kubectl expose deployment frontend \
-            --namespace cnapp \
-            --name frontend \
-            --port 3000 \
-            --target-port 3000 \
-            --type ClusterIP \
-            --dry-run=client -o yaml | kubectl apply -f -
+          set -euo pipefail
+      
+          export BACKEND_IMAGE="${ACR_NAME}.azurecr.io/${IMAGE_NAME_BACKEND}:${BACKEND_VERSION}"
+          export FRONTEND_IMAGE="${ACR_NAME}.azurecr.io/${IMAGE_NAME_FRONTEND}:${FRONTEND_VERSION}"
+      
+          for manifest in k8s/cnapp/*.yaml; do
+            envsubst < "$manifest" | kubectl apply -f -
+          done
+      
+          kubectl rollout status deployment/backend --namespace cnapp --timeout=180s
+          kubectl rollout status deployment/frontend --namespace cnapp --timeout=180s
 
       - name: Get App gw ID
         run: |
