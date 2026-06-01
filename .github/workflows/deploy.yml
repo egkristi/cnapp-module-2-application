@@ -103,18 +103,6 @@ jobs:
             --type ClusterIP \
             --dry-run=client -o yaml | kubectl apply -f -
 
-      - name: Curl test
-        run: |
-          kubectl run curl-test \
-            --namespace cnapp \
-            --rm \
-            --attach \
-            --image=curlimages/curl \
-            --restart=Never \
-            --command -- \
-            curl -v http://frontend:3000
-
-
       - name: Get App gw ID
         run: |
           AGFC_ID=$(az network alb show \
@@ -125,7 +113,7 @@ jobs:
 
           echo $AGFC_ID
           echo $AGFC_FRONTEND_NAME
-    
+
       - name: Create ingress for app
         run: |
           kubectl apply -f - <<EOF
@@ -152,4 +140,14 @@ jobs:
           EOF
 
           kubectl get ingress -n cnapp 
-          
+
+      - name: Curl test
+        run: |
+          kubectl run curl-test \
+            --namespace cnapp \
+            --rm \
+            --attach \
+            --image=curlimages/curl \
+            --restart=Never \
+            --command -- \
+            curl -v http://frontend:3000
