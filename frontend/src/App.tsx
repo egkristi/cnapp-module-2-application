@@ -32,7 +32,7 @@ export default function App() {
       <div className="card">
         <p className="eyebrow">Codespaces starter</p>
         <h1>React + FastAPI</h1>
-        <p className="lead">A tiny frontend and backend pair that runs cleanly in containers.</p>
+        <p className="lead">A tiny frontend and backend pair that runs cleanly in containers for CNAPP lab part 3.</p>
 
         <div className="panel">
           <h2>Backend response</h2>
@@ -57,7 +57,7 @@ export default function App() {
           </div>
           <div className="mini-card">
             <h3>Deploy</h3>
-            <p>Each ships with its own Dockerfile</p>
+            <p>Each ships with its own Dockerfile and deploys through GitHub Actions</p>
           </div>
         </div>
       </div>
